@@ -1,0 +1,979 @@
+openapi: 3.0.4
+info:
+  title: Travelers Social Network - OpenAPI 3.0
+  description: |-
+    This is a specification for Travelers Social Network as a part of homework during system design course
+  version: 1.0.12
+externalDocs:
+  description: Find out more about Swagger
+  url: https://swagger.io
+servers:
+  - url: https://travelers-social-network/api/v1
+  - url: https://travelers-social-network/web/v1
+tags:
+  - name: posts
+    description: "Handler for posts"
+  - name: user
+    description: "Operations about user"
+  - name: comments
+    description: "Handler for comments"
+  - name: search
+    description: "Handler for search"
+paths:
+  /posts:
+    post:
+      tags:
+        - posts
+      summary: Add new post
+      description: "Add new post"
+      operationId: addPost
+      requestBody:
+        description: Add new post
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishedPost'
+        '400':
+          description: "Invalid input"
+        '422':
+          description: "Validation exception"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - travel_social_network_auth:
+            - write:posts
+            - read:posts
+  /posts/{postId}:
+    put:
+      tags:
+        - posts
+      summary: Update an existing post
+      description: "Update an existing post by Id"
+      operationId: updatePost
+      requestBody:
+        description: "Update existing and published post by Id"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
+        required: true
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishedPost'
+        '400':
+          description: "Invalid ID supplied"
+        '404':
+          description: "Post not found"
+        '422':
+          description: "Validation exception"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - travel_social_network_auth:
+            - write:posts
+            - read:posts
+    delete:
+      tags:
+        - posts
+      summary: Deletes a post
+      description: "Delete a post"
+      operationId: deletePost
+      parameters:
+        - name: api_key
+          in: header
+          required: false
+          schema:
+            type: string
+        - name: postId
+          in: path
+          description: "Post id to delete"
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: "Post deleted"
+        '400':
+          description: "Invalid id value"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - travel_social_network_auth:
+            - write:posts
+            - read:posts
+  /posts/findByUserId:
+    get:
+      tags:
+        - posts
+      summary: Finds Posts by userId
+      description: "Useful if we open profile"
+      operationId: getPostsByUserId
+      parameters:
+        - name: userId
+          in: query
+          description: "user id for search"
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublishedPost'
+        '400':
+          description: "Invalid userId value"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - travel_social_network_auth:
+            - write:posts
+            - read:posts
+  /posts/loadPageOfPosts:
+    get:
+      tags:
+        - posts
+      summary: Load page of posts
+      description: "It gets userId, finds all posts of user friends and load by page"
+      operationId: getPosts
+      parameters:
+        - name: userId
+          in: query
+          description: "userId for loading page"
+          required: true
+          explode: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: "number of page"
+          required: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublishedPost'
+        '400':
+          description: "Invalid tag value"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - travel_social_network_auth:
+            - write:posts
+            - read:posts
+  /posts/findByGeoCoordinates:
+    get:
+      tags:
+        - posts
+      summary: Find posts by geoCoordinates
+      description: "Returns a list of posts near geo coordinate"
+      operationId: getPostsByGeoCoordinates
+      requestBody:
+        description: "geo coordinates"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeoCoordinates'
+      parameters:
+        - name: scale
+          in: query
+          description: "length of search near geo coords in meters"
+          required: false
+          explode: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublishedPost'
+        '400':
+          description: "Invalid geo value"
+        '404':
+          description: "No posts near this geo"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - travel_social_network_auth:
+            - write:posts
+            - read:posts
+  /posts/uploadImage:
+    post:
+      tags:
+        - posts
+      summary: Uploads an image
+      description: "Upload image"
+      operationId: uploadFile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  description: "Uploaded image"
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: "No file uploaded"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - travel_social_network_auth:
+            - write:posts
+            - read:posts
+  /user:
+    post:
+      tags:
+        - user
+      summary: Create user
+      description: "This can only be done by the logged in user"
+      operationId: createUser
+      requestBody:
+        description: Created user object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/User'
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /user/{userId}:
+    get:
+      tags:
+        - user
+      summary: Get user profile by user id
+      description: "Get user detail based on id"
+      operationId: getUserById
+      parameters:
+        - name: userId
+          in: path
+          description: Id that wopuld be used for search
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: "Invalid userId supplied"
+        '404':
+          description: "User not found"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      tags:
+        - user
+      summary: Update user resource
+      description: "This can only be done by the logged in user"
+      operationId: updateUser
+      parameters:
+        - name: userId
+          in: path
+          description: "userId that need to be updated"
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: "Update an existing user"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: "successful operation"
+        '400':
+          description: "bad request"
+        '404':
+          description: "user not found"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      tags:
+        - user
+      summary: Delete user resource
+      description: "This can only be done by the logged in user"
+      operationId: deleteUser
+      parameters:
+        - name: userId
+          in: path
+          description: "The userId that needs to be deleted"
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "User deleted"
+        '400':
+          description: "Invalid userId supplied"
+        '404':
+          description: "User not found"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /user/{userId}/followers:
+    get:
+      tags:
+        - user
+      summary: Returns all followers of user
+      description: Returns all followers of user
+      operationId: getUserFollowersByUserId
+      parameters:
+        - name: userId
+          in: path
+          description: "The userId that needs to be searched"
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Followers are found"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Follower'
+        '400':
+          description: "Invalid userId supplied"
+        '404':
+          description: "User not found"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /user/{userId}/followedBy:
+    get:
+      tags:
+        - user
+      summary: Returns all users followed by userId
+      description: Returns all users followed by userId
+      operationId: getUserFollowedByUserId
+      parameters:
+        - name: userId
+          in: path
+          description: "The userId that needs to be searched"
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "FollowedBy are found"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Follower'
+        '400':
+          description: "Invalid userId supplied"
+        '404':
+          description: "User not found"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /user/follow:
+    post:
+      tags:
+        - user
+      summary: Add other user to followed by list of current user
+      description: Returns all users followed by userId
+      operationId: getUserFollowedByUserId
+      parameters:
+        - name: userId
+          in: query
+          description: "The userId that follows"
+          required: true
+          schema:
+            type: string
+        - name: followedId
+          in: query
+          description: "The userId that followed by"
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Followed By are added"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: "Invalid userId supplied"
+        '404':
+          description: "User not found"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /user/likePost/{postId]:
+    post:
+      tags:
+        - user
+      summary: Add status liked by user to post
+      description: Add status liked by user to post
+      operationId: addLikedToPostByUser
+      parameters:
+        - name: userId
+          in: query
+          description: "The userId that likes"
+          required: true
+          schema:
+            type: string
+        - name: postId
+          in: path
+          description: "The postId that has been liked"
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Like added"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: "Invalid userId or postId supplied"
+        '404':
+          description: "User or PostId not found"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /comments/loadCommentsOfPost/{postId}:
+    get:
+      tags:
+        - comments
+      summary: Load comments of post
+      description: "It gets postId, finds comments of post and load by page"
+      operationId: getCommentsByPostId
+      parameters:
+        - name: postId
+          in: path
+          description: "postId for loading comments"
+          required: true
+          explode: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: "number of page"
+          required: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+        '400':
+          description: "Invalid tag value"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - travel_social_network_auth:
+            - write:comments
+            - read:comments
+  /comments/{postId]:
+    post:
+      tags:
+        - comments
+      summary: Add comment to post
+      description: "Add comment to post"
+      operationId: addCommentsToPost
+      parameters:
+        - name: postId
+          in: path
+          description: "postId to add comments"
+          required: true
+          explode: true
+          schema:
+            type: string
+      requestBody:
+        description: "Add comment to post"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: "Invalid commentId value"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - travel_social_network_auth:
+            - write:comments
+            - read:comments
+  /comments/{commentId]:
+    put:
+      tags:
+        - comments
+      summary: Update comment
+      description: "Update comment"
+      operationId: updateComments
+      parameters:
+        - name: commentId
+          in: path
+          description: "commentId to update"
+          required: true
+          explode: true
+          schema:
+            type: string
+      requestBody:
+        description: "Update comment"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comment'
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: "Invalid commentId value"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - travel_social_network_auth:
+            - write:comments
+            - read:comments
+  /search/place:
+    post:
+      tags:
+        - search
+      summary: Search query
+      description: "Search query to find place"
+      operationId: postSearchPlace
+      requestBody:
+        description: "Search query body"
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchPlaceResultList'
+        '400':
+          description: "Invalid search query value"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - travel_social_network_auth:
+            - write:search
+            - read:search
+  /search/userByUsername:
+    post:
+      tags:
+        - search
+      summary: Search query
+      description: "Search query to find user by username"
+      operationId: postSearchUser
+      requestBody:
+        description: "Search query body"
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchUserResultList'
+        '400':
+          description: "Invalid search query value"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - travel_social_network_auth:
+            - write:search
+            - read:search
+components:
+  schemas:
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: Dogs
+      xml:
+        name: category
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        username:
+          type: string
+          example: theUser
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: James
+        email:
+          type: string
+          example: john@email.com
+        phone:
+          type: string
+          example: '12345'
+        followers:
+          type: integer
+          format: int64
+          example: 10
+        followedBy:
+          type: integer
+          format: int64
+          example: 10
+        userStatus:
+          type: integer
+          description: User Status
+          format: int32
+          example: 1
+      xml:
+        name: user
+    Follower:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        username:
+          type: string
+          example: theUser
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: James
+      xml:
+        name: user
+    Comment:
+      required:
+        - idempotency_key
+        - description
+        - userId
+        - postId
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        idempotency_key:
+          type: string
+          example: 6e7c3490-68c5-43cb-98f1-b4c607dbdc14
+        userId:
+          type: integer
+          format: int64
+          example: 10
+        postId:
+          type: integer
+          format: int64
+          example: 10
+        userName:
+          type: string
+        description:
+          type: string
+          example: nice travel
+        timeStamp:
+          type: string
+    PublishedPost:
+      required:
+        - description
+        - images
+        - id
+        - userId
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        userId:
+          type: integer
+          format: int64
+          example: 10
+        description:
+          type: string
+          example: nice travel
+        likeCount:
+          type: integer
+          format: int64
+          example: 10
+        hasComments:
+          type: boolean
+        moderationStatus:
+          type: string
+          default: pending
+          enum:
+            - approved
+            - pending
+            - rejected
+        rejectReason:
+          type: string
+        geo:
+          $ref: '#/components/schemas/GeoCoordinates'
+        imageUrls:
+          type: array
+          items:
+            type: string
+        timeStamp:
+          type: string
+    Post:
+      required:
+        - idempotency_key
+        - description
+        - images
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        idempotency_key:
+          type: string
+          example: 6e7c3490-68c5-43cb-98f1-b4c607dbdc14
+        description:
+          type: string
+          example: nice travel
+        geo:
+          $ref: '#/components/schemas/GeoCoordinates'
+        imageIds:
+          type: array
+          items:
+            type: string
+        timeStamp:
+          type: string
+    GeoCoordinates:
+      type: object
+      properties:
+        longitude:
+          type: string
+          example: 12312
+        altitude:
+          type: string
+          example: Dogs
+    SearchPlaceResultList:
+      type: array
+      items:
+        properties:
+          geoCoordinates:
+            $ref: '#/components/schemas/GeoCoordinates'
+          name:
+            type: string
+    SearchUserResultList:
+      type: array
+      items:
+        properties:
+          userId:
+            type: string
+          username:
+            type: string
+          userFirstName:
+            type: string
+          userSecondName:
+            type: string
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        type:
+          type: string
+        message:
+          type: string
+      xml:
+        name: '##default'
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required:
+        - code
+        - message
+  securitySchemes:
+    travel_social_network_auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://petstore3.swagger.io/oauth/authorize
+          scopes:
+            "write:pets": modify pets in your account
+            "read:pets": read your pets
+    api_key:
+      type: apiKey
+      name: api_key
+      in: header

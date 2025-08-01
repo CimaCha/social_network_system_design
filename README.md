@@ -91,6 +91,10 @@
 "likeCount" int, 8 байт
 "hasComments": bool 1 байт
 "timestamp" string 20 байт
+"geo": {
+    "altitude":string,
+    "longtitude": string
+  }
 }
 ```
 Traffic = 1245 байт x 11574 = 14 409 КB/s
@@ -101,6 +105,10 @@ Traffic = 1245 байт x 11574 = 14 409 КB/s
 "description": string, 1 Кбайт
 "images" []image{id: int, data []byte} (1 МБ + 8 байт) х 10 = 10 Мб
 "timestamp" string 20 байт
+"geo": {
+    "altitude":string,
+    "longtitude": string
+  }
 }
 ```
 Traffic = 10 MB x 30 = 300 MB/s
