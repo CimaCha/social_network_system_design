@@ -4,21 +4,18 @@ info:
   description: |-
     This is a specification for Travelers Social Network as a part of homework during system design course
   version: 1.0.12
-externalDocs:
-  description: Find out more about Swagger
-  url: https://swagger.io
 servers:
   - url: https://travelers-social-network/api/v1
   - url: https://travelers-social-network/web/v1
 tags:
   - name: posts
-    description: "Handler for posts"
+    description: "Handlers for posts"
   - name: user
     description: "Operations about user"
   - name: comments
-    description: "Handler for comments"
+    description: "Handlers for comments"
   - name: search
-    description: "Handler for search"
+    description: "Handlers for search"
 paths:
   /posts:
     post:
@@ -683,19 +680,46 @@ paths:
         - travel_social_network_auth:
             - write:comments
             - read:comments
-  /search/place:
-    post:
+    delete:
+      tags:
+        - comments
+      summary: Delete comment
+      description: "Delete comment"
+      operationId: deleteComments
+      parameters:
+        - name: commentId
+          in: path
+          description: "commentId to delete"
+          required: true
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: "Invalid commentId value"
+        default:
+          description: "Unexpected error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - travel_social_network_auth:
+            - write:comments
+            - read:comments
+  /search/popularPlace:
+    get:
       tags:
         - search
-      summary: Search query
-      description: "Search query to find place"
-      operationId: postSearchPlace
-      requestBody:
-        description: "Search query body"
-        content:
-          application/json:
-            schema:
-              type: string
+      summary: Get most popular place
+      description: "Get most popular place"
+      operationId: postSearchPopularPlace
       responses:
         '200':
           description: "successful operation"
@@ -703,8 +727,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SearchPlaceResultList'
-        '400':
-          description: "Invalid search query value"
         default:
           description: "Unexpected error"
           content:
@@ -871,15 +893,6 @@ components:
           example: 10
         hasComments:
           type: boolean
-        moderationStatus:
-          type: string
-          default: pending
-          enum:
-            - approved
-            - pending
-            - rejected
-        rejectReason:
-          type: string
         geo:
           $ref: '#/components/schemas/GeoCoordinates'
         imageUrls:
@@ -923,13 +936,12 @@ components:
           type: string
           example: Dogs
     SearchPlaceResultList:
-      type: array
-      items:
-        properties:
-          geoCoordinates:
-            $ref: '#/components/schemas/GeoCoordinates'
-          name:
-            type: string
+      type: object
+      properties:
+        geoCoordinates:
+          $ref: '#/components/schemas/GeoCoordinates'
+        name:
+          type: string
     SearchUserResultList:
       type: array
       items:
